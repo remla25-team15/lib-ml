@@ -40,19 +40,28 @@ def _extract_message_len(data):
     # return as np.array and reshape so that it works with make_union
     return np.array([len(review) for review in data]).reshape(-1, 1)
 
+
+# Preprocessing function without using Pipeline
 def _preprocess(messages):
     '''
     1. Convert word tokens from processed msgs dataframe into a bag of words (limited to 1420 features)
     2. Convert bag of words representation into tf-idf vectorized representation for each message
     3. Add message length as a numerical feature
     '''
-    preprocessor = make_union(
-        make_pipeline(
-            CountVectorizer(analyzer=_text_process, max_features=1420),
-            TfidfTransformer()
-        ),
-        FunctionTransformer(_extract_message_len, validate=False)
-    )
+    # 1. Convert messages into a bag of words (CountVectorizer)
+    count_vectorizer = CountVectorizer(analyzer=_text_process, max_features=1420)
+    X_counts = count_vectorizer.fit_transform(messages['Review'])
 
-    preprocessed_data = preprocessor.fit_transform(messages['Review'])
-    return preprocessed_data
+    # 2. Convert counts to tf-idf representation
+    tfidf_transformer = TfidfTransformer()
+    X_tfidf = tfidf_transformer.fit_transform(X_counts)
+
+    # 3. Add message length as a numerical feature
+    message_length = _extract_message_len(messages['Review'])
+
+    # Combine tf-idf features and message length
+    preprocessed_data = np.hstack([X_tfidf.toarray(), message_length])
+
+    # Return the preprocessed data and the CountVectorizer
+    return preprocessed_data, count_vectorizer
+
