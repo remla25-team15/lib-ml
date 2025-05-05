@@ -9,13 +9,6 @@ nltk.download('stopwords')
 from sklearn.pipeline import make_pipeline, make_union
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.preprocessing import FunctionTransformer
-from joblib import dump, load
-
-def _load_data():
-    message = pd.read_csv('../restaurantreviewsdata/a1_RestaurantReviews_HistoricDump.tsv',
-                          delimiter='\t',
-                          quoting=3,)
-    return message
 
 def _text_process(data):
     '''
@@ -62,23 +55,4 @@ def _preprocess(messages):
     )
 
     preprocessed_data = preprocessor.fit_transform(messages['Review'])
-    dump(preprocessor, '../output/preprocessor.joblib')
-    dump(preprocessed_data, '../output/preprocessed_data.joblib')
     return preprocessed_data
-
-def prepare(message):
-    preprocessor = load('../output/preprocessor.joblib')
-    return preprocessor.transform([message])
-
-def get_vectorizer():
-    return CountVectorizer()
-
-def main():
-    messages = _load_data()
-    print('\n################### Processed Messages ###################\n')
-    with pd.option_context('expand_frame_repr', False):
-        print(messages)
-    _preprocess(messages)
-
-if __name__ == "__main__":
-    main()
