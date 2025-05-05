@@ -41,16 +41,22 @@ def _extract_message_len(data):
     return np.array([len(review) for review in data]).reshape(-1, 1)
 
 
-# Preprocessing function without using Pipeline
-def _preprocess(messages):
+def _preprocess(messages, cv=None):
     '''
-    1. Convert word tokens from processed msgs dataframe into a bag of words (limited to 1420 features)
-    2. Convert bag of words representation into tf-idf vectorized representation for each message
-    3. Add message length as a numerical feature
+    1. Convert word tokens from processed msgs dataframe into a bag of words (using CountVectorizer).
+    2. Convert bag of words representation into tf-idf vectorized representation for each message.
+    3. Add message length as a numerical feature.
+    If `cv` (CountVectorizer) is provided, it will be used to transform the data.
+    Otherwise, a new `cv` will be created and fitted.
     '''
-    # 1. Convert messages into a bag of words (CountVectorizer)
-    count_vectorizer = CountVectorizer(analyzer=_text_process, max_features=1420)
-    X_counts = count_vectorizer.fit_transform(messages['Review'])
+
+    if cv is None:
+        # 1. If CountVectorizer is not provided, create and fit it
+        cv = CountVectorizer(analyzer=_text_process, max_features=1420)
+        X_counts = cv.fit_transform(messages['Review'])
+    else:
+        # 2. If CountVectorizer is provided, just use it to transform the messages
+        X_counts = cv.transform(messages['Review'])
 
     # 2. Convert counts to tf-idf representation
     tfidf_transformer = TfidfTransformer()
@@ -63,5 +69,5 @@ def _preprocess(messages):
     preprocessed_data = np.hstack([X_tfidf.toarray(), message_length])
 
     # Return the preprocessed data and the CountVectorizer
-    return preprocessed_data, count_vectorizer
+    return preprocessed_data, cv
 
